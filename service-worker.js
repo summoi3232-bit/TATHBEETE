@@ -1,4 +1,4 @@
-const CACHE_NAME = 'thabat-al-hifz-v1';
+const CACHE_NAME = 'thabat-al-hifz-v2';
 const ASSETS = [
   './',
   './index.html',

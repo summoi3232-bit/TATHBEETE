@@ -68,6 +68,9 @@ body{
 .qt-sbtn{border:1px solid var(--border); background:var(--surface2); color:var(--text-muted); font-size:12px; padding:6px 12px; border-radius:6px; cursor:pointer; font-family:'Tajawal',sans-serif; flex:1;}
 .qt-sbtn.sel-nazar{background:var(--nazar); color:#0d1a29; border-color:var(--nazar);}
 .qt-sbtn.sel-qalb{background:var(--qalb); color:#0d1f17; border-color:var(--qalb);}
+.qt-mode-bar{display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;}
+.qt-mode-btn{flex:1; min-width:100px; border:1px solid var(--border); background:var(--surface2); color:var(--text-muted); font-size:12px; padding:8px 6px; border-radius:8px; cursor:pointer; font-family:'Tajawal',sans-serif;}
+.qt-mode-btn.active{background:var(--gold); color:#241c04; border-color:var(--gold); font-weight:500;}
 .qt-cycle-bar{background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;}
 .qt-cycle-info{font-size:13px; color:var(--text-muted);}
 .qt-cycle-info b{color:var(--gold);}
@@ -186,6 +189,15 @@ body{
   ];
   const CYCLE_LEN = SCHEDULE.length; // 14
 
+  // أوضاع الورد: يمكن التركيز على أسبوع بمفرده (تكراره حتى الإتقان) أو دمج الأسبوعين في دورة واحدة.
+  // التبديل بين الأوضاع مرن ومتاح في أي وقت، وكل وضع يحتفظ بتاريخ بداية دورته الخاص بمعزل عن الأوضاع الأخرى.
+  const WIRD_MODES = {
+    week1: { label: 'الأسبوع الأول فقط', short: 'الأسبوع الأول', days: Array.from({length:7}, (_,i)=>i) },
+    week2: { label: 'الأسبوع الثاني فقط', short: 'الأسبوع الثاني', days: Array.from({length:7}, (_,i)=>i+7) },
+    both:  { label: 'الأسبوعان معًا',     short: 'الأسبوعان',     days: Array.from({length:CYCLE_LEN}, (_,i)=>i) }
+  };
+  const WIRD_MODE_ORDER = ['week2','week1','both'];
+
   const STAGES = ["حفظ المقاطع","ربط المقاطع","سرد متصل"];
   const INTERVALS = [1, 3, 7, 14, 30]; // days
   const STORAGE_KEY = 'thabat-al-hifz-state';
@@ -193,24 +205,39 @@ body{
   const todayStr = () => new Date().toISOString().slice(0,10);
   const addDays = (d, n) => { const dt = new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); };
 
-  let state = { classification: {}, tathbit: {}, spaced: {}, wirdLog: {}, cycleStart: null };
+  let state = { classification: {}, tathbit: {}, spaced: {}, wirdLog: {}, cycleStarts: {}, wirdMode: 'both' };
   let activeTab = "classify";
-  let activeCycleDay = 0;   // 0-based index into SCHEDULE for the day being *viewed*
+  let activeCycleDay = 0;   // 0-based *position within the active mode's day list* being viewed
   let editingCycleDate = false;
 
-  function currentCycleDay(){
-    if (!state.cycleStart) return 0;
-    const diff = Math.floor((new Date(todayStr()) - new Date(state.cycleStart)) / MS_DAY);
-    return ((diff % CYCLE_LEN) + CYCLE_LEN) % CYCLE_LEN;
+  // موضع اليوم الحالي (0-based) ضمن دورة الوضع المحدد — طول الدورة هنا هو عدد أيام هذا الوضع فقط
+  // (7 لوضع أسبوع واحد، 14 لوضع الأسبوعين معًا)، وتاريخ البداية خاص بكل وضع على حدة.
+  function currentCyclePos(mode){
+    const days = WIRD_MODES[mode].days;
+    const len = days.length;
+    const start = state.cycleStarts[mode];
+    if (!start) return 0;
+    const diff = Math.floor((new Date(todayStr()) - new Date(start)) / MS_DAY);
+    return ((diff % len) + len) % len;
   }
+  // فهرس اليوم الحقيقي في SCHEDULE بناءً على وضع ما وموضع ضمن دورته
+  function realDayIndex(mode, pos){ return WIRD_MODES[mode].days[pos]; }
 
   function loadState(){
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) state = Object.assign(state, JSON.parse(raw));
     } catch(e) { /* first run, defaults stand */ }
-    if (!state.cycleStart) state.cycleStart = todayStr();
-    activeCycleDay = currentCycleDay();
+    // ترحيل الصيغة القديمة (تاريخ بداية واحد للدورتين معًا) إلى خريطة بداية لكل وضع
+    if (typeof state.cycleStart === 'string') {
+      state.cycleStarts = state.cycleStarts || {};
+      if (!state.cycleStarts.both) state.cycleStarts.both = state.cycleStart;
+      delete state.cycleStart;
+    }
+    state.cycleStarts = state.cycleStarts || {};
+    if (!state.wirdMode || !WIRD_MODES[state.wirdMode]) state.wirdMode = 'both';
+    Object.keys(WIRD_MODES).forEach(m => { if (!state.cycleStarts[m]) state.cycleStarts[m] = todayStr(); });
+    activeCycleDay = currentCyclePos(state.wirdMode);
     saveState();
     render();
   }
@@ -245,9 +272,17 @@ body{
     reader.onload = (e) => {
       try {
         const parsed = JSON.parse(e.target.result);
-        state = Object.assign({ classification: {}, tathbit: {}, spaced: {}, wirdLog: {}, cycleStart: todayStr() }, parsed);
+        state = Object.assign({ classification: {}, tathbit: {}, spaced: {}, wirdLog: {}, cycleStarts: {}, wirdMode: 'both' }, parsed);
+        if (typeof state.cycleStart === 'string') {
+          state.cycleStarts = state.cycleStarts || {};
+          if (!state.cycleStarts.both) state.cycleStarts.both = state.cycleStart;
+          delete state.cycleStart;
+        }
+        state.cycleStarts = state.cycleStarts || {};
+        if (!state.wirdMode || !WIRD_MODES[state.wirdMode]) state.wirdMode = 'both';
+        Object.keys(WIRD_MODES).forEach(m => { if (!state.cycleStarts[m]) state.cycleStarts[m] = todayStr(); });
         saveState();
-        activeCycleDay = currentCycleDay();
+        activeCycleDay = currentCyclePos(state.wirdMode);
         render();
         showToast('تم استيراد النسخة الاحتياطية');
       } catch(err) { showToast('ملف غير صالح'); }
@@ -294,20 +329,28 @@ body{
   }
 
   function renderWird(){
-    const cur = currentCycleDay();
-    const dayPicker = `<div class="qt-day-picker">` + SCHEDULE.map((_,i) => {
-      const week = i < 7 ? 1 : 2;
-      const dayInWeek = (i % 7) + 1;
-      return `<button class="qt-day-btn ${activeCycleDay===i?'active':''} ${cur===i?'is-today':''}" data-cday="${i}">
-        <span>أ${week}-ي${dayInWeek}</span><small>${SCHEDULE[i].length} سورة</small>
+    const mode = state.wirdMode;
+    const modeDays = WIRD_MODES[mode].days;
+    const modeLen = modeDays.length;
+    const cur = currentCyclePos(mode); // موضع اليوم الحالي (اليوم الفعلي) ضمن دورة هذا الوضع
+
+    const modeBar = `<div class="qt-mode-bar">` + WIRD_MODE_ORDER.map(m => `
+        <button class="qt-mode-btn ${mode===m?'active':''}" data-wird-mode="${m}">${WIRD_MODES[m].label}</button>
+      `).join('') + `</div>`;
+
+    const dayPicker = `<div class="qt-day-picker">` + modeDays.map((realIdx, pos) => {
+      const week = realIdx < 7 ? 1 : 2;
+      const dayInWeek = (realIdx % 7) + 1;
+      return `<button class="qt-day-btn ${activeCycleDay===pos?'active':''} ${cur===pos?'is-today':''}" data-cday="${pos}">
+        <span>أ${week}-ي${dayInWeek}</span><small>${SCHEDULE[realIdx].length} سورة</small>
       </button>`;
     }).join('') + `</div>`;
 
-    const printBar = `<div class="qt-print-bar"><button class="qt-btn qt-btn-ghost" id="qt-print-btn">🖨️ طباعة / حفظ PDF</button></div>`;
+    const printBar = `<div class="qt-print-bar"><button class="qt-btn qt-btn-ghost" id="qt-print-btn">🖨️ طباعة / حفظ PDF (الأسبوعين كاملَين)</button></div>`;
 
-    const startDate = state.cycleStart;
+    const startDate = state.cycleStarts[mode];
     const cycleBar = `<div class="qt-cycle-bar">
-        <span class="qt-cycle-info">بدأت الدورة في <b>${startDate}</b> — اليوم الحالي: <b>${cur+1} / ${CYCLE_LEN}</b></span>
+        <span class="qt-cycle-info">وضع «${WIRD_MODES[mode].short}» — بدأت دورته في <b>${startDate}</b> — اليوم الحالي: <b>${cur+1} / ${modeLen}</b></span>
         <button class="qt-cycle-edit" id="qt-edit-cycle">تعديل</button>
       </div>
       <div class="qt-cycle-date-row ${editingCycleDate?'show':''}">
@@ -315,10 +358,11 @@ body{
         <button class="qt-btn qt-btn-primary" id="qt-cycle-date-save" style="flex:0 0 auto;">حفظ</button>
       </div>`;
 
-    const ids = SCHEDULE[activeCycleDay];
+    const activeRealIdx = realDayIndex(mode, activeCycleDay);
+    const ids = SCHEDULE[activeRealIdx];
     const log = state.wirdLog[todayStr()] || {};
     const doneCount = ids.filter(id => !!log[id]).length;
-    const progress = `<p class="qt-progress-line">${dayRangeLabel(activeCycleDay)} — ${PAGE_INFO[activeCycleDay]} — أنجزت ${doneCount} من ${ids.length} اليوم</p>`;
+    const progress = `<p class="qt-progress-line">${dayRangeLabel(activeRealIdx)} — ${PAGE_INFO[activeRealIdx]} — أنجزت ${doneCount} من ${ids.length} اليوم</p>`;
 
     const rows = ids.map(id => {
       const s = SURAHS.find(x=>x.id===id);
@@ -338,7 +382,7 @@ body{
       </div>`;
     }).join('');
 
-    return `<p class="qt-section-label">الجدول الثابت لأسبوعين: البقرة → الإسراء (الأسبوع الأول)، الكهف → الناس (الأسبوع الثاني)</p>${cycleBar}${printBar}${dayPicker}${progress}${rows}`;
+    return `<p class="qt-section-label">افصل بين الأسبوعين أو ادمجهما بحرية: ركّز على أسبوع بمفرده حتى إتقانه، ثم بدّل، ثم اجمعهما — كل وضع يحتفظ بدورته ومكانك فيها بمعزل عن الآخر</p>${modeBar}${cycleBar}${printBar}${dayPicker}${progress}${rows}`;
   }
 
   function renderPrintView(){
@@ -431,7 +475,8 @@ body{
         <div class="qt-about-head"><span class="qt-about-num">2</span><h3>الورد الأسبوعين</h3></div>
         <p>القرآن كله (ما عدا الفاتحة) موزّع على جدول ثابت مدته أسبوعان: من البقرة إلى الإسراء على أيام الأسبوع الأول، ومن الكهف إلى الناس على أيام الأسبوع الثاني. التوزيع اليومي مبني على تقسيم صفحات المصحف المدني بين الأيام، مع إبقاء كل سورة كاملة ضمن يوم واحد.</p>
         <p>أمام كل سورة في يومها زرّان: <strong>نظرًا</strong> إن قرأتها بالمصحف، و<strong>عن ظهر قلب</strong> إن سردتها من الذاكرة. الهدف أن ينتقل تسجيلك تدريجيًا من الأول إلى الثاني في كل دورة.</p>
-        <div class="qt-about-quote">الدورة تتكرر كل أسبوعين تلقائيًا؛ يمكنك تعديل تاريخ بدايتها من تبويب الورد. ويمكنك أيضًا طباعة الجدول كاملًا أو حفظه PDF من زر «طباعة» في تبويب الورد.</div>
+        <div class="qt-about-quote">الدورة تتكرر تلقائيًا (كل 14 يومًا في وضع الأسبوعين معًا، أو كل 7 أيام في وضع أسبوع واحد)؛ يمكنك تعديل تاريخ بدايتها من تبويب الورد. ويمكنك أيضًا طباعة الجدول كاملًا أو حفظه PDF من زر «طباعة» في تبويب الورد.</div>
+        <p><strong>وضع الورد (مرن):</strong> يمكنك في أعلى تبويب الورد الاختيار بين تشغيل الأسبوع الأول وحده، أو الأسبوع الثاني وحده، أو الأسبوعين معًا — والتبديل بينها في أي وقت. نهج مقترح: ركّز على الأسبوع الثاني (نصف القرآن الثاني) وكرّره حتى إتقانه، ثم بدّل إلى الأسبوع الأول وكرّره حتى إتقانه، ثم انتقل إلى وضع «الأسبوعين معًا» لأداء الورد الكامل بنفس المنهجية. كل وضع يحتفظ بتاريخ بداية دورته الخاص، فالتبديل بينها لا يفسد تقدّمك في أي منها.</p>
       </div>
 
       <div class="qt-about-card">
@@ -467,6 +512,14 @@ body{
 
     document.querySelectorAll('[data-tier]').forEach(b => b.onclick = () => setTier(b.dataset.id, b.dataset.tier));
     document.querySelectorAll('[data-cday]').forEach(b => b.onclick = () => { activeCycleDay = Number(b.dataset.cday); render(); });
+    document.querySelectorAll('[data-wird-mode]').forEach(b => b.onclick = () => {
+      const m = b.dataset.wirdMode;
+      if (m === state.wirdMode) return;
+      state.wirdMode = m;
+      editingCycleDate = false;
+      activeCycleDay = currentCyclePos(m);
+      saveState(); render();
+    });
     document.querySelectorAll('[data-wird-id]').forEach(b => b.onclick = () => {
       const id = b.dataset.wirdId; const status = b.dataset.status; const t = todayStr();
       state.wirdLog[t] = state.wirdLog[t] || {};
@@ -481,7 +534,13 @@ body{
     const saveDateBtn = document.getElementById('qt-cycle-date-save');
     if (saveDateBtn) saveDateBtn.onclick = () => {
       const v = document.getElementById('qt-cycle-date-input').value;
-      if (v) { state.cycleStart = v; editingCycleDate = false; activeCycleDay = currentCycleDay(); saveState(); render(); showToast('تم تحديث تاريخ بداية الدورة'); }
+      if (v) {
+        state.cycleStarts[state.wirdMode] = v;
+        editingCycleDate = false;
+        activeCycleDay = currentCyclePos(state.wirdMode);
+        saveState(); render();
+        showToast('تم تحديث تاريخ بداية دورة هذا الوضع');
+      }
     };
     document.querySelectorAll('[data-advance]').forEach(b => b.onclick = () => {
       const id = b.dataset.advance;
