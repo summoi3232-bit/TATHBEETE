@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ثبات الحفظ</title>
+<meta name="description" content="متابعة تثبيت المتفلت من القرآن عبر ورد أسبوعين، من القراءة نظرًا إلى القراءة عن ظهر قلب">
+<meta name="theme-color" content="#10231d">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ثبات الحفظ">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700&display=swap');
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  --bg:#10231d; --surface:#16302a; --surface2:#1c3a32; --surface3:#234339;
+  --text:#f2efe6; --text-muted:#a9bdb3; --text-faint:#6f8578;
+  --gold:#c9a227; --good:#5b9c7a; --medium:#c9a227; --weak:#b5533c;
+  --nazar:#5b8ac9; --qalb:#5b9c7a;
+  --border:rgba(242,239,230,0.14);
+  direction:rtl; font-family:'Tajawal',sans-serif; background:var(--bg); color:var(--text);
+  line-height:1.7; min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+#qt-root{
+  max-width:520px; margin:0 auto; min-height:100vh;
+  display:flex; flex-direction:column;
+}
+.qt-head{padding:22px 20px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+.qt-title{font-family:'Amiri',serif; font-weight:700; font-size:22px; color:var(--gold); margin:0;}
+.qt-sub{font-size:13px; color:var(--text-muted); margin-top:4px;}
+.qt-head-btns{display:flex; gap:6px; flex:0 0 auto;}
+.qt-icon-btn{background:var(--surface2); border:1px solid var(--border); color:var(--text-muted); width:34px; height:34px; border-radius:8px; cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center;}
+.qt-tabs{display:flex; gap:0; border-bottom:1px solid var(--border); background:var(--surface); overflow-x:auto; position:sticky; top:0; z-index:5;}
+.qt-tab{flex:1; min-width:80px; padding:12px 4px; text-align:center; font-size:12.5px; color:var(--text-faint); cursor:pointer; border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none; font-family:'Tajawal',sans-serif; white-space:nowrap;}
+.qt-tab.active{color:var(--gold); border-bottom:2px solid var(--gold);}
+.qt-body{padding:16px 18px 40px; flex:1; overflow-y:auto;}
+.qt-section-label{font-size:12px; color:var(--text-faint); margin:14px 0 6px;}
+.qt-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap;}
+.qt-row:last-child{border-bottom:none;}
+.qt-name{font-family:'Amiri',serif; font-size:16px; color:var(--text);}
+.qt-name-num{color:var(--text-faint); font-size:12px; margin-left:6px;}
+.qt-tier-btns{display:flex; gap:6px;}
+.qt-tbtn{border:1px solid var(--border); background:var(--surface2); color:var(--text-muted); font-size:11.5px; padding:5px 9px; border-radius:6px; cursor:pointer; font-family:'Tajawal',sans-serif;}
+.qt-tbtn.sel-good{background:var(--good); color:#0d1f17; border-color:var(--good);}
+.qt-tbtn.sel-medium{background:var(--medium); color:#241c04; border-color:var(--medium);}
+.qt-tbtn.sel-weak{background:var(--weak); color:#2a0f08; border-color:var(--weak);}
+.qt-tier-mini{font-size:10.5px; padding:2px 7px; border-radius:8px; background:var(--surface3); color:var(--text-faint); flex:0 0 auto;}
+.qt-tier-mini.good{background:var(--good); color:#0d1f17;}
+.qt-tier-mini.medium{background:var(--medium); color:#241c04;}
+.qt-tier-mini.weak{background:var(--weak); color:#2a0f08;}
+.qt-day-picker{display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:4px;}
+.qt-day-btn{flex:0 0 auto; padding:7px 12px; border-radius:6px; border:1px solid var(--border); background:var(--surface2); color:var(--text-muted); font-size:12px; cursor:pointer; font-family:'Tajawal',sans-serif; display:flex; flex-direction:column; align-items:center; gap:2px;}
+.qt-day-btn small{font-size:9.5px; color:var(--text-faint);}
+.qt-day-btn.active{background:var(--gold); color:#241c04; border-color:var(--gold);}
+.qt-day-btn.active small{color:#3a2e08;}
+.qt-day-btn.is-today{border-color:var(--good);}
+.qt-wird-row{width:100%; display:flex; flex-direction:column; gap:6px; padding:10px 0; border-bottom:1px solid var(--border);}
+.qt-wird-row:last-child{border-bottom:none;}
+.qt-wird-top{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.qt-wird-name{display:flex; align-items:center; gap:8px;}
+.qt-status-btns{display:flex; gap:6px;}
+.qt-sbtn{border:1px solid var(--border); background:var(--surface2); color:var(--text-muted); font-size:12px; padding:6px 12px; border-radius:6px; cursor:pointer; font-family:'Tajawal',sans-serif; flex:1;}
+.qt-sbtn.sel-nazar{background:var(--nazar); color:#0d1a29; border-color:var(--nazar);}
+.qt-sbtn.sel-qalb{background:var(--qalb); color:#0d1f17; border-color:var(--qalb);}
+.qt-cycle-bar{background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;}
+.qt-cycle-info{font-size:13px; color:var(--text-muted);}
+.qt-cycle-info b{color:var(--gold);}
+.qt-cycle-edit{background:none; border:1px solid var(--border); color:var(--text-faint); font-size:11px; padding:4px 9px; border-radius:6px; cursor:pointer; font-family:'Tajawal',sans-serif;}
+.qt-cycle-date-row{display:none; margin-top:10px; gap:8px; align-items:center;}
+.qt-cycle-date-row.show{display:flex;}
+.qt-cycle-date-row input{flex:1; background:var(--surface3); border:1px solid var(--border); color:var(--text); padding:6px 8px; border-radius:6px; font-family:'Tajawal',sans-serif;}
+.qt-progress-line{font-size:12px; color:var(--text-faint); margin-bottom:10px;}
+.qt-check{width:22px; height:22px; border-radius:5px; border:1px solid var(--text-faint); background:transparent; cursor:pointer; flex:0 0 22px;}
+.qt-check.done{background:var(--good); border-color:var(--good);}
+.qt-empty{color:var(--text-faint); font-size:13px; text-align:center; padding:30px 10px;}
+.qt-card{background:var(--surface2); border-right:3px solid var(--medium); border-radius:8px; padding:12px 14px; margin-bottom:10px;}
+.qt-card.weak-b{border-color:var(--weak);}
+.qt-card.due{border-color:var(--good);}
+.qt-card-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+.qt-stage-track{display:flex; gap:4px; margin:8px 0;}
+.qt-stage-dot{flex:1; height:5px; border-radius:3px; background:var(--surface3);}
+.qt-stage-dot.on{background:var(--gold);}
+.qt-actions{display:flex; gap:8px; margin-top:8px;}
+.qt-btn{border:none; padding:8px 12px; border-radius:6px; font-size:12px; cursor:pointer; font-family:'Tajawal',sans-serif; flex:1;}
+.qt-btn-primary{background:var(--gold); color:#241c04; font-weight:500;}
+.qt-btn-ghost{background:var(--surface3); color:var(--text-muted);}
+.qt-meta{font-size:11px; color:var(--text-faint);}
+.qt-badge{font-size:11px; padding:2px 8px; border-radius:10px; background:var(--surface3); color:var(--text-muted);}
+.qt-badge.due{background:var(--good); color:#0d1f17;}
+.qt-toast{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--surface3); color:var(--text); border:1px solid var(--border); padding:10px 18px; border-radius:20px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:50;}
+.qt-toast.show{opacity:1;}
+#qt-file-input{display:none;}
+.qt-about-card{background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:14px;}
+.qt-about-card h3{font-family:'Amiri',serif; color:var(--gold); font-size:17px; margin:0 0 8px;}
+.qt-about-card p{font-size:13.5px; color:var(--text-muted); margin:0 0 6px;}
+.qt-about-num{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--gold); color:#241c04; font-size:12px; font-weight:700; margin-left:8px; flex:0 0 22px;}
+.qt-about-head{display:flex; align-items:center; margin-bottom:8px;}
+.qt-about-head h3{margin:0;}
+.qt-about-quote{border-right:3px solid var(--gold); padding:2px 12px; margin:10px 0; font-family:'Amiri',serif; font-size:14.5px; color:var(--text);}
+.qt-about-list{margin:6px 0 0; padding-right:18px; font-size:13.5px; color:var(--text-muted);}
+.qt-about-list li{margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div id="qt-root">
+  <div class="qt-head">
+    <div>
+      <p class="qt-title">ثبات الحفظ</p>
+      <p class="qt-sub">تثبيت المتفلت: من القراءة نظرًا إلى القراءة عن ظهر قلب</p>
+    </div>
+    <div class="qt-head-btns">
+      <button class="qt-icon-btn" id="qt-about" title="عن المنهجية">؟</button>
+      <button class="qt-icon-btn" id="qt-export" title="تصدير نسخة احتياطية">⭳</button>
+      <button class="qt-icon-btn" id="qt-import" title="استيراد نسخة احتياطية">⭱</button>
+    </div>
+  </div>
+  <div class="qt-tabs" id="qt-tabs"></div>
+  <div class="qt-body" id="qt-body"></div>
+</div>
+<div class="qt-toast" id="qt-toast"></div>
+<input type="file" id="qt-file-input" accept="application/json">
+
+<script>
+(function(){
+  const SURAHS = [
+    "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
+    "هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه",
+    "الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم",
+    "لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر",
+    "فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق",
+    "الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة",
+    "الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج",
+    "نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس",
+    "التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد",
+    "الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات",
+    "القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر",
+    "المسد","الإخلاص","الفلق","الناس"
+  ].map((name, i) => ({ id: i + 1, name }));
+
+  // الجدول الثابت لأسبوعين: من البقرة إلى الإسراء في الأسبوع الأول، ومن الكهف إلى الناس في الأسبوع الثاني.
+  // التوزيع اليومي مبني على تناسب تقريبي في عدد الآيات بين أيام كل أسبوع (وليس عدد السور)، مع إبقاء كل سورة كاملة في يوم واحد.
+  const SCHEDULE = [
+    [2],
+    [3,4],
+    [5,6],
+    [7,8],
+    [9,10,11],
+    [12,13,14,15],
+    [16,17],
+    [18,19,20,21,22],
+    [23,24,25,26,27],
+    [28,29,30,31,32,33,34,35,36],
+    [37,38,39,40,41,42,43],
+    [44,45,46,47,48,49,50,51,52,53,54,55],
+    [56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74],
+    [75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114]
+  ];
+  const CYCLE_LEN = SCHEDULE.length; // 14
+
+  const STAGES = ["حفظ المقاطع","ربط المقاطع","سرد متصل"];
+  const INTERVALS = [1, 3, 7, 14, 30]; // days
+  const STORAGE_KEY = 'thabat-al-hifz-state';
+  const MS_DAY = 86400000;
+  const todayStr = () => new Date().toISOString().slice(0,10);
+  const addDays = (d, n) => { const dt = new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); };
+
+  let state = { classification: {}, tathbit: {}, spaced: {}, wirdLog: {}, cycleStart: null };
+  let activeTab = "classify";
+  let activeCycleDay = 0;   // 0-based index into SCHEDULE for the day being *viewed*
+  let editingCycleDate = false;
+
+  function currentCycleDay(){
+    if (!state.cycleStart) return 0;
+    const diff = Math.floor((new Date(todayStr()) - new Date(state.cycleStart)) / MS_DAY);
+    return ((diff % CYCLE_LEN) + CYCLE_LEN) % CYCLE_LEN;
+  }
+
+  function loadState(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) state = Object.assign(state, JSON.parse(raw));
+    } catch(e) { /* first run, defaults stand */ }
+    if (!state.cycleStart) state.cycleStart = todayStr();
+    activeCycleDay = currentCycleDay();
+    saveState();
+    render();
+  }
+  function saveState(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e) { console.error('save failed', e); }
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('qt-toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function exportBackup(){
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `thabat-al-hifz-backup-${todayStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('تم تصدير النسخة الاحتياطية');
+  }
+
+  function importBackup(file){
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        state = Object.assign({ classification: {}, tathbit: {}, spaced: {}, wirdLog: {}, cycleStart: todayStr() }, parsed);
+        saveState();
+        activeCycleDay = currentCycleDay();
+        render();
+        showToast('تم استيراد النسخة الاحتياطية');
+      } catch(err) { showToast('ملف غير صالح'); }
+    };
+    reader.readAsText(file);
+  }
+
+  function setTier(id, tier){
+    state.classification[id] = (state.classification[id] === tier) ? undefined : tier;
+    if (!state.classification[id]) delete state.classification[id];
+    saveState(); render();
+  }
+  function tierOf(id){ return state.classification[id]; }
+  const tierLabel = { good:'جيد', medium:'متوسط', weak:'ضعيف' };
+
+  function renderTabs(){
+    const tabs = [
+      ["classify","التصنيف"], ["wird","الورد (أسبوعين)"], ["tathbit","التثبيت"], ["spaced","التكرار المتباعد"], ["about","المنهجية"]
+    ];
+    document.getElementById('qt-tabs').innerHTML = tabs.map(([k,l]) =>
+      `<button class="qt-tab ${activeTab===k?'active':''}" data-tab="${k}">${l}</button>`
+    ).join('');
+    document.querySelectorAll('.qt-tab').forEach(b => b.onclick = () => { activeTab = b.dataset.tab; render(); });
+  }
+
+  function renderClassify(){
+    return `<p class="qt-section-label">اختر مستوى حفظك لكل سورة (${Object.keys(state.classification).length} من ${SURAHS.length} مصنّفة)</p>` +
+      SURAHS.map(s => `
+        <div class="qt-row">
+          <span class="qt-name">${s.name}<span class="qt-name-num">${s.id}</span></span>
+          <div class="qt-tier-btns">
+            <button class="qt-tbtn ${tierOf(s.id)==='good'?'sel-good':''}" data-id="${s.id}" data-tier="good">جيد</button>
+            <button class="qt-tbtn ${tierOf(s.id)==='medium'?'sel-medium':''}" data-id="${s.id}" data-tier="medium">متوسط</button>
+            <button class="qt-tbtn ${tierOf(s.id)==='weak'?'sel-weak':''}" data-id="${s.id}" data-tier="weak">ضعيف</button>
+          </div>
+        </div>`).join('');
+  }
+
+  function dayRangeLabel(idx){
+    const ids = SCHEDULE[idx];
+    const first = SURAHS.find(s=>s.id===ids[0]).name;
+    const last = SURAHS.find(s=>s.id===ids[ids.length-1]).name;
+    return ids.length === 1 ? first : `${first} ← ${last}`;
+  }
+
+  function renderWird(){
+    const cur = currentCycleDay();
+    const dayPicker = `<div class="qt-day-picker">` + SCHEDULE.map((_,i) => {
+      const week = i < 7 ? 1 : 2;
+      const dayInWeek = (i % 7) + 1;
+      return `<button class="qt-day-btn ${activeCycleDay===i?'active':''} ${cur===i?'is-today':''}" data-cday="${i}">
+        <span>أ${week}-ي${dayInWeek}</span><small>${SCHEDULE[i].length} سورة</small>
+      </button>`;
+    }).join('') + `</div>`;
+
+    const startDate = state.cycleStart;
+    const cycleBar = `<div class="qt-cycle-bar">
+        <span class="qt-cycle-info">بدأت الدورة في <b>${startDate}</b> — اليوم الحالي: <b>${cur+1} / ${CYCLE_LEN}</b></span>
+        <button class="qt-cycle-edit" id="qt-edit-cycle">تعديل</button>
+      </div>
+      <div class="qt-cycle-date-row ${editingCycleDate?'show':''}">
+        <input type="date" id="qt-cycle-date-input" value="${startDate}">
+        <button class="qt-btn qt-btn-primary" id="qt-cycle-date-save" style="flex:0 0 auto;">حفظ</button>
+      </div>`;
+
+    const ids = SCHEDULE[activeCycleDay];
+    const log = state.wirdLog[todayStr()] || {};
+    const doneCount = ids.filter(id => !!log[id]).length;
+    const progress = `<p class="qt-progress-line">${dayRangeLabel(activeCycleDay)} — أنجزت ${doneCount} من ${ids.length} اليوم</p>`;
+
+    const rows = ids.map(id => {
+      const s = SURAHS.find(x=>x.id===id);
+      const tier = tierOf(id);
+      const status = log[id];
+      return `<div class="qt-wird-row">
+        <div class="qt-wird-top">
+          <div class="qt-wird-name">
+            <span class="qt-name">${s.name}</span>
+            <span class="qt-tier-mini ${tier||''}">${tier ? tierLabel[tier] : 'غير مصنف'}</span>
+          </div>
+        </div>
+        <div class="qt-status-btns">
+          <button class="qt-sbtn ${status==='nazar'?'sel-nazar':''}" data-wird-id="${id}" data-status="nazar">نظرًا</button>
+          <button class="qt-sbtn ${status==='qalb'?'sel-qalb':''}" data-wird-id="${id}" data-status="qalb">عن ظهر قلب</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<p class="qt-section-label">الجدول الثابت لأسبوعين: البقرة → الإسراء (الأسبوع الأول)، الكهف → الناس (الأسبوع الثاني)</p>${cycleBar}${dayPicker}${progress}${rows}`;
+  }
+
+  function renderTathbit(){
+    const ids = SURAHS.filter(s => {
+      const t = tierOf(s.id);
+      return (t === 'medium' || t === 'weak') && !state.spaced[s.id];
+    }).map(s => s.id);
+    if (ids.length === 0) return `<div class="qt-empty">لا سور بحاجة تثبيت حاليًا. صنّف سورًا كـ«متوسط» أو «ضعيف».</div>`;
+    return `<p class="qt-section-label">قسّم كل سورة إلى مقاطع صغيرة، أتقن كل مرحلة قبل التالية</p>` +
+      ids.map(id => {
+        const s = SURAHS.find(x => x.id === id);
+        const stage = state.tathbit[id] || 0;
+        const weak = tierOf(id) === 'weak';
+        const dots = STAGES.map((_, i) => `<div class="qt-stage-dot ${i<=stage?'on':''}"></div>`).join('');
+        const canFinish = stage >= STAGES.length - 1;
+        return `<div class="qt-card ${weak?'weak-b':''}">
+          <div class="qt-card-top">
+            <span class="qt-name">${s.name}</span>
+            <span class="qt-badge">${STAGES[Math.min(stage, STAGES.length-1)]}</span>
+          </div>
+          <div class="qt-stage-track">${dots}</div>
+          <div class="qt-actions">
+            ${!canFinish ? `<button class="qt-btn qt-btn-primary" data-advance="${id}">أتقنت هذه المرحلة</button>` :
+              `<button class="qt-btn qt-btn-primary" data-finish="${id}">أدخلها التكرار المتباعد</button>`}
+          </div>
+        </div>`;
+      }).join('');
+  }
+
+  function renderSpaced(){
+    const entries = Object.keys(state.spaced).map(id => ({ id: Number(id), ...state.spaced[id] }));
+    if (entries.length === 0) return `<div class="qt-empty">لا سور في دورة التكرار المتباعد بعد. أكمل تثبيت سورة أولاً.</div>`;
+    entries.sort((a,b) => a.nextDate.localeCompare(b.nextDate));
+    const today = todayStr();
+    return `<p class="qt-section-label">راجع السور المستحقة، الفترة تكبر كل مرة تنجح فيها</p>` +
+      entries.map(e => {
+        const s = SURAHS.find(x => x.id === e.id);
+        const due = e.nextDate <= today;
+        const stageLabel = `${INTERVALS[e.stage]} يوم`;
+        return `<div class="qt-card ${due?'due':''}">
+          <div class="qt-card-top">
+            <span class="qt-name">${s.name}</span>
+            <span class="qt-badge ${due?'due':''}">${due ? 'مستحقة اليوم' : e.nextDate}</span>
+          </div>
+          <p class="qt-meta">المرحلة الحالية: كل ${stageLabel}</p>
+          <div class="qt-actions">
+            <button class="qt-btn qt-btn-primary" data-passed="${e.id}">تمت المراجعة بلا خطأ</button>
+            <button class="qt-btn qt-btn-ghost" data-failed="${e.id}">أخطأت، أعِد الفترة</button>
+          </div>
+        </div>`;
+      }).join('');
+  }
+
+  function renderAbout(){
+    return `
+      <div class="qt-about-card">
+        <p style="color:var(--text); font-size:14px;">ثبات الحفظ أربع مراحل متتابعة، هدفها التغلّب على «المتفلت» من المحفوظ: السورة التي حُفظت يومًا ثم بدأت تنفلت، فتنتقل بها تدريجيًا من الاعتماد على النظر في المصحف إلى السرد الكامل عن ظهر قلب.</p>
+      </div>
+
+      <div class="qt-about-card">
+        <div class="qt-about-head"><span class="qt-about-num">1</span><h3>التصنيف</h3></div>
+        <p>حدّد بصدق مستوى حفظك الحالي لكل سورة: جيد، متوسط، أو ضعيف. هذا التصنيف يظهر كشارة أمام كل سورة في الورد اليومي، ويحدد أي السور تحتاج تثبيتًا من الصفر.</p>
+      </div>
+
+      <div class="qt-about-card">
+        <div class="qt-about-head"><span class="qt-about-num">2</span><h3>الورد الأسبوعين</h3></div>
+        <p>القرآن كله (ما عدا الفاتحة) موزّع على جدول ثابت مدته أسبوعان: من البقرة إلى الإسراء على أيام الأسبوع الأول، ومن الكهف إلى الناس على أيام الأسبوع الثاني. التوزيع اليومي مبني على تقريب في عدد الآيات بين الأيام، مع إبقاء كل سورة كاملة ضمن يوم واحد.</p>
+        <p>أمام كل سورة في يومها زرّان: <strong>نظرًا</strong> إن قرأتها بالمصحف، و<strong>عن ظهر قلب</strong> إن سردتها من الذاكرة. الهدف أن ينتقل تسجيلك تدريجيًا من الأول إلى الثاني في كل دورة.</p>
+        <div class="qt-about-quote">الدورة تتكرر كل أسبوعين تلقائيًا؛ يمكنك تعديل تاريخ بدايتها من تبويب الورد.</div>
+      </div>
+
+      <div class="qt-about-card">
+        <div class="qt-about-head"><span class="qt-about-num">3</span><h3>التثبيت (للمتوسط والضعيف)</h3></div>
+        <p>السور «المتوسطة» و«الضعيفة» تحتاج معالجة مختلفة عن مجرد التكرار: تُقسَّم كل سورة إلى مقاطع صغيرة يمكن إتقانها فعلًا، وتمر بثلاث مراحل متصاعدة:</p>
+        <ul class="qt-about-list">
+          <li><strong>حفظ المقاطع:</strong> إتقان كل مقطع صغير بمفرده</li>
+          <li><strong>ربط المقاطع:</strong> وصل المقاطع ببعضها دون توقف</li>
+          <li><strong>سرد متصل:</strong> السورة كاملة من أولها لآخرها بلا نظر متكرر ولا تلقين</li>
+        </ul>
+        <p>لا تنتقل السورة للمرحلة التالية حتى تُتقَن التي قبلها؛ التسرّع هنا هو أكثر ما يُفسد الحفظ لاحقًا.</p>
+      </div>
+
+      <div class="qt-about-card">
+        <div class="qt-about-head"><span class="qt-about-num">4</span><h3>التكرار المتباعد</h3></div>
+        <p>بعد إتمام التثبيت، تدخل السورة دورة مراجعة بفواصل زمنية متزايدة: يوم، ثم 3 أيام، ثم أسبوع، ثم أسبوعين، ثم شهر. كل مراجعة ناجحة بلا خطأ تُبعّد الفاصل التالي، وكل خطأ يُقرّبه من جديد.</p>
+      </div>
+
+      <div class="qt-about-card">
+        <p style="color:var(--text-faint); font-size:12.5px; margin:0;">بإيجاز: صنّف بصدق، أدِّ الورد الثابت لأسبوعين وسجّل نظرًا أو عن ظهر قلب، ثبّت الضعيف على مراحل، ثم أطل الفاصل الزمني تدريجيًا لكل ما أُتقن.</p>
+      </div>`;
+  }
+
+  function render(){
+    renderTabs();
+    const body = document.getElementById('qt-body');
+    if (activeTab === 'classify') body.innerHTML = renderClassify();
+    else if (activeTab === 'wird') body.innerHTML = renderWird();
+    else if (activeTab === 'tathbit') body.innerHTML = renderTathbit();
+    else if (activeTab === 'spaced') body.innerHTML = renderSpaced();
+    else body.innerHTML = renderAbout();
+
+    document.querySelectorAll('[data-tier]').forEach(b => b.onclick = () => setTier(b.dataset.id, b.dataset.tier));
+    document.querySelectorAll('[data-cday]').forEach(b => b.onclick = () => { activeCycleDay = Number(b.dataset.cday); render(); });
+    document.querySelectorAll('[data-wird-id]').forEach(b => b.onclick = () => {
+      const id = b.dataset.wirdId; const status = b.dataset.status; const t = todayStr();
+      state.wirdLog[t] = state.wirdLog[t] || {};
+      state.wirdLog[t][id] = (state.wirdLog[t][id] === status) ? undefined : status;
+      if (!state.wirdLog[t][id]) delete state.wirdLog[t][id];
+      saveState(); render();
+    });
+    const editBtn = document.getElementById('qt-edit-cycle');
+    if (editBtn) editBtn.onclick = () => { editingCycleDate = !editingCycleDate; render(); };
+    const saveDateBtn = document.getElementById('qt-cycle-date-save');
+    if (saveDateBtn) saveDateBtn.onclick = () => {
+      const v = document.getElementById('qt-cycle-date-input').value;
+      if (v) { state.cycleStart = v; editingCycleDate = false; activeCycleDay = currentCycleDay(); saveState(); render(); showToast('تم تحديث تاريخ بداية الدورة'); }
+    };
+    document.querySelectorAll('[data-advance]').forEach(b => b.onclick = () => {
+      const id = b.dataset.advance;
+      state.tathbit[id] = (state.tathbit[id] || 0) + 1;
+      saveState(); render();
+    });
+    document.querySelectorAll('[data-finish]').forEach(b => b.onclick = () => {
+      const id = b.dataset.finish;
+      state.spaced[id] = { stage: 0, nextDate: addDays(new Date(), INTERVALS[0]) };
+      delete state.tathbit[id];
+      saveState(); render();
+    });
+    document.querySelectorAll('[data-passed]').forEach(b => b.onclick = () => {
+      const id = b.dataset.passed;
+      const cur = state.spaced[id];
+      const nextStage = Math.min(cur.stage + 1, INTERVALS.length - 1);
+      state.spaced[id] = { stage: nextStage, nextDate: addDays(new Date(), INTERVALS[nextStage]) };
+      saveState(); render();
+    });
+    document.querySelectorAll('[data-failed]').forEach(b => b.onclick = () => {
+      const id = b.dataset.failed;
+      const cur = state.spaced[id];
+      const prevStage = Math.max(cur.stage - 1, 0);
+      state.spaced[id] = { stage: prevStage, nextDate: addDays(new Date(), INTERVALS[prevStage]) };
+      saveState(); render();
+    });
+  }
+
+  document.getElementById('qt-about').onclick = () => { activeTab = 'about'; render(); };
+  document.getElementById('qt-export').onclick = exportBackup;
+  document.getElementById('qt-import').onclick = () => document.getElementById('qt-file-input').click();
+  document.getElementById('qt-file-input').onchange = (e) => {
+    if (e.target.files && e.target.files[0]) importBackup(e.target.files[0]);
+    e.target.value = '';
+  };
+
+  loadState();
+  activeTab = 'wird';
+  render();
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
